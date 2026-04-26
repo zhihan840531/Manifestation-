@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="color-scheme" content="light only">
+<title>顯化日記</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@200;300;400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Noto+Sans+TC:wght@200;300;400&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════════════════
+   DESIGN SYSTEM v7 · TONE-ON-TONE PAPER JOURNAL
+   ─────────────────────────────────────────────────
+   Philosophy:
+   · Background IS the theme colour (always light)
+   · Cards = white at ~50% opacity — "vellum layer"
+   · Ink = same hue, deeply saturated
+   · Zero dark shadows — only 1px tonal borders
+   · Feels like watercolour paper with ink writing
+═══════════════════════════════════════════════════ */
+
+/* ── TOKENS ── */
+:root {
+  --bg:      #F6F5FF;   /* page background */
+  --card:    rgba(255,255,255,0.55);
+  --ink:     #9D8DB5;   /* text, borders, plant strokes */
+  --ink-d:   #4A3F7A;   /* dark ink — headings, numbers */
+  --ink-m:   rgba(74,63,122,0.55);   /* mid ink */
+  --ink-l:   rgba(74,63,122,0.30);   /* light ink / placeholder */
+  --vein:    rgba(74,63,122,0.10);   /* 1px card borders */
+  --bubble:  rgba(255,255,255,0.72); /* floating bubbles */
+
+  --r-2xl: 28px;
+  --r-xl:  22px;
+  --r-lg:  16px;
+  --r-pill:100px;
+
+  --spring: cubic-bezier(0.34,1.4,0.64,1);
+  --ease:   cubic-bezier(0.4,0,0.2,1);
+  --t: 380ms;
+}
+
+/* ── 8 ALL-LIGHT THEMES ──
+   Every theme: bg (lightest tint), ink (darkish hue), card opacity stays.
+   Variable --ink-d and --ink-m derived from --ink-d hex.
+*/
+[data-theme="t1"]{/* 薄霧 — misty blue */
+  --bg:#EEF2FA; --ink:#7A8CB0; --ink-d:#2C3E6E;
+  --ink-m:rgba(44,62,110,.55); --ink-l:rgba(44,62,110,.28);
+  --vein:rgba(44,62,110,.10);
+}
+[data-theme="t2"]{/* 晨曦 — amber dawn */
+  --bg:#FBF5EA; --ink:#C0784A; --ink-d:#6A3010;
+  --ink-m:rgba(106,48,16,.55); --ink-l:rgba(106,48,16,.28);
+  --vein:rgba(106,48,16,.10);
+}
+[data-theme="t3"]{/* 玫瑰 — dusty rose ← uses exact spec */
+  --bg:#FFF5F5; --ink:#D58D8D; --ink-d:#7A2A2A;
+  --ink-m:rgba(122,42,42,.55); --ink-l:rgba(122,42,42,.28);
+  --vein:rgba(122,42,42,.10);
+}
+[data-theme="t4"]{/* 餘燼 — warm bark */
+  --bg:#F8F0E8; --ink:#B06030; --ink-d:#52280A;
+  --ink-m:rgba(82,40,10,.55); --ink-l:rgba(82,40,10,.28);
+  --vein:rgba(82,40,10,.10);
+}
+[data-theme="t5"]{/* 鼠尾草 — sage ← uses exact spec */
+  --bg:#F2F9F2; --ink:#7A9D7A; --ink-d:#1E4020;
+  --ink-m:rgba(30,64,32,.55); --ink-l:rgba(30,64,32,.28);
+  --vein:rgba(30,64,32,.10);
+}
+[data-theme="t6"]{/* 暮色 — soft violet */
+  --bg:#F3F0FB; --ink:#8068C0; --ink-d:#2E1E62;
+  --ink-m:rgba(46,30,98,.55); --ink-l:rgba(46,30,98,.28);
+  --vein:rgba(46,30,98,.10);
+}
+[data-theme="t7"]{/* 霧紫 — lilac ← uses exact spec */
+  --bg:#F6F5FF; --ink:#9D8DB5; --ink-d:#4A3F7A;
+  --ink-m:rgba(74,63,122,.55); --ink-l:rgba(74,63,122,.28);
+  --vein:rgba(74,63,122,.10);
+}
+[data-theme="t8"]{/* 晨霜 — pale morning frost */
+  --bg:#F5F8FA; --ink:#7A9EB0; --ink-d:#1E3C50;
+  --ink-m:rgba(30,60,80,.55); --ink-l:rgba(30,60,80,.28);
+  --vein:rgba(30,60,80,.10);
+}
+
+/* ── RESET ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{color-scheme:light only;}
+html,body{height:100%;overflow:hidden;}
+body{
+  background:var(--bg);color:var(--ink-d);
+  font-family:'Noto Sans TC',sans-serif;
+  font-weight:300;font-size:15px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+  transition:background var(--t) var(--ease),color var(--t) var(--ease);
+}
+input,textarea,button{font-family:inherit;}
+textarea{resize:none;}
+button{cursor:pointer;border:none;background:none;}
+*{scrollbar-width:none;} *::-webkit-scrollbar{display:none;}
+
+/* ── PAPER GRAIN TEXTURE OVERLAY ── */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  opacity:1;
+}
+
+/* ── APP SHELL ── */
+#app{
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;
+  height:100dvh;max-width:430px;margin:0 auto;overflow:hidden;
+}
+
+/* ─────────────────────────────────────────
+   TOP BAR
+───────────────────────────────────────── */
+#topbar{
+  flex-shrink:0;
+  display:flex;align-items:flex-end;justify-content:space-between;
+  padding:20px 22px 12px;
+  position:relative;z-index:30;
+}
+.top-left{}
+.top-eyebrow{
+  font-family:'Cormorant Garamond',serif;
+  font-size:10px;letter-spacing:.32em;text-transform:uppercase;
+  color:var(--ink-l);margin-bottom:1px;
+}
+.top-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:26px;font-weight:300;
+  color:var(--ink-d);letter-spacing:.02em;
+  transition:color var(--t);
+}
+.top-right{display:flex;gap:8px;padding-bottom:3px;}
+.icon-btn{
+  width:36px;height:36px;border-radius:var(--r-pill);
+  background:var(--card);
+  border:1px solid var(--vein);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;color:var(--ink-m);
+  transition:all 160ms var(--ease);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+}
+.icon-btn:active{transform:scale(0.86);}
+
+/* ─────────────────────────────────────────
+   PAGES
+───────────────────────────────────────── */
+#pages{flex:1;position:relative;overflow:hidden;z-index:1;}
+.page{
+  position:absolute;inset:0;
+  overflow-y:auto;overflow-x:hidden;
+  padding:4px 20px 108px;
+  opacity:0;pointer-events:none;
+  transform:translateY(14px) scale(.99);
+  transition:opacity 300ms var(--ease),transform 300ms var(--ease);
+}
+.page.active{opacity:1;pointer-events:all;transform:none;}
+@keyframes up{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+.anim{animation:up .45s var(--ease) both;}
+.anim-1{animation-delay:.06s;} .anim-2{animation-delay:.12s;}
+.anim-3{animation-delay:.18s;} .anim-4{animation-delay:.24s;}
+.anim-5{animation-delay:.30s;} .anim-6{animation-delay:.36s;}
+
+/* ─────────────────────────────────────────
+   CARD — vellum layer
+───────────────────────────────────────── */
+.card{
+  background:var(--card);
+  border:1px solid var(--vein);
+  border-radius:var(--r-2xl);
+  padding:22px 20px;
+  margin-bottom:14px;
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  position:relative;overflow:hidden;
+  transition:background var(--t),border-color var(--t);
+}
+/* top inner highlight edge */
+.card::after{
+  content:'';position:absolute;
+  top:0;left:12px;right:12px;height:1px;
+  background:rgba(255,255,255,.6);
+  pointer-events:none;
+}
+.eyebrow{
+  font-family:'Cormorant Garamond',serif;
+  font-size:10px;letter-spacing:.26em;text-transform:uppercase;
+  color:var(--ink);margin-bottom:14px;font-weight:400;
+  opacity:.8;transition:color var(--t);
+}
+
+/* ─────────────────────────────────────────
+   BOTTOM TAB BAR
+───────────────────────────────────────── */
+#tabbar{
+  flex-shrink:0;display:flex;
+  background:var(--card);
+  border-top:1px solid var(--vein);
+  padding-bottom:max(10px,env(safe-area-inset-bottom));
+  position:relative;z-index:30;
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  transition:background var(--t),border-color var(--t);
+}
+.tab-item{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:3px;
+  padding:10px 0 6px;
+  color:var(--ink-l);transition:color 200ms;position:relative;
+}
+.tab-item.active{color:var(--ink-d);}
+/* top pip */
+.tab-item::before{
+  content:'';position:absolute;top:0;left:50%;
+  transform:translateX(-50%) scaleX(0);
+  width:24px;height:2px;border-radius:0 0 2px 2px;
+  background:var(--ink);
+  transition:transform 280ms var(--spring);
+}
+.tab-item.active::before{transform:translateX(-50%) scaleX(1);}
+.tab-icon{width:20px;height:20px;transition:transform 200ms var(--spring);}
+.tab-item.active .tab-icon{transform:translateY(-2px);}
+.tab-label{font-size:10px;letter-spacing:.10em;font-weight:300;}
+
+/* ═══════════════════════════════════════════════════
+   RITUAL PAGE
+═══════════════════════════════════════════════════ */
+
+/* ── DATE STRIP ── */
+.date-strip{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  padding:2px 2px 14px;
+}
+.ds-big{
+  font-family:'Cormorant Garamond',serif;
+  font-size:56px;font-weight:300;line-height:1;
+  color:var(--ink-d);letter-spacing:-.02em;
+}
+.ds-right{text-align:right;padding-bottom:4px;}
+.ds-day{
+  font-family:'Cormorant Garamond',serif;
+  font-size:12px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--ink-l);
+}
+.ds-month{
+  font-family:'Cormorant Garamond',serif;
+  font-size:14px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-m);margin-top:2px;
+}
+
+/* ── GARDEN STAGE — open canvas ── */
+.garden-stage{
+  position:relative;
+  height:210px;
+  margin:0 -20px 14px;
+  display:flex;align-items:flex-end;justify-content:center;
+  overflow:visible;
+}
+/* dream image behind plant */
+.dream-layer{
+  position:absolute;inset:0;
+  background-size:cover;background-position:center;
+  opacity:0;transition:opacity .8s;
+  border-radius:0;
+}
+
+/* ─ plant svg ─ */
+#plant-svg{overflow:visible;position:relative;z-index:2;}
+.ps{fill:none;stroke:var(--ink);stroke-linecap:round;stroke-linejoin:round;transition:stroke var(--t);}
+.pg{fill:var(--ink);transition:fill var(--t);}
+
+@keyframes sD{from{stroke-dashoffset:500;opacity:0;}to{stroke-dashoffset:0;opacity:1;}}
+@keyframes bD{from{stroke-dashoffset:260;opacity:0;}to{stroke-dashoffset:0;opacity:.55;}}
+@keyframes nP{0%,100%{r:2;opacity:.4;}50%{r:3.2;opacity:.95;}}
+@keyframes pF{0%{transform:translate(0,0);opacity:.55;}35%{transform:translate(4px,-10px);opacity:1;}70%{transform:translate(-3px,-20px);opacity:.45;}100%{transform:translate(1px,-30px);opacity:0;}}
+@keyframes aG{0%,100%{r:15;opacity:.35;}50%{r:21;opacity:.80;}}
+@keyframes rB{0%,100%{opacity:.06;}50%{opacity:.13;}}
+@keyframes breath{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-5px) scale(1.022);}}
+.plant-g{transform-origin:160px 186px;animation:breath 5.5s ease-in-out infinite;}
+
+/* ─ FLOATING BUBBLES ─ */
+.bubble-wrap{
+  position:absolute;right:12px;top:8px;
+  display:flex;flex-direction:column;gap:10px;
+  z-index:5;
+}
+.bubble{
+  width:42px;height:42px;border-radius:50%;
+  background:var(--bubble);
+  border:1px solid rgba(255,255,255,.6);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;cursor:pointer;
+  box-shadow:0 2px 12px rgba(0,0,0,.06);
+  transition:transform .2s var(--spring),box-shadow .2s;
+  animation:floatBub 4s ease-in-out infinite;
+}
+.bubble:nth-child(2){animation-delay:.8s;}
+.bubble:nth-child(3){animation-delay:1.6s;}
+.bubble:active{transform:scale(.88);}
+@keyframes floatBub{
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-6px);}
+}
+
+/* ── QUOTE ── */
+.quote-txt{
+  font-family:'Cormorant Garamond',serif;
+  font-size:18px;font-style:italic;font-weight:300;
+  line-height:2.0;color:var(--ink-d);letter-spacing:.02em;
+  margin-bottom:16px;min-height:58px;
+  transition:opacity .22s,transform .22s;
+}
+.quote-edit{
+  position:absolute;top:18px;right:18px;
+  font-size:13px;color:var(--ink-l);padding:4px;transition:color .16s;
+}
+.quote-edit:hover{color:var(--ink);}
+.q-nav{display:flex;align-items:center;justify-content:center;gap:14px;}
+.q-arr{font-size:18px;color:var(--ink-l);padding:6px;transition:color .16s;}
+.q-arr:hover{color:var(--ink);}
+.q-dots{display:flex;gap:6px;}
+.q-dot{width:5px;height:5px;border-radius:50%;background:var(--ink);opacity:.22;padding:0;transition:opacity .18s,transform .18s;}
+.q-dot.on{opacity:1;transform:scale(1.35);}
+
+/* ── RING PROGRESS ── */
+.ring-wrap{
+  display:flex;align-items:center;gap:20px;padding:4px 0;
+}
+.ring-svg{flex-shrink:0;filter:drop-shadow(0 0 6px color-mix(in srgb, var(--ink) 22%, transparent));}
+.ring-bg-c{fill:none;stroke:var(--vein);stroke-width:5;}
+.ring-fg-c{
+  fill:none;stroke:var(--ink);stroke-width:5;
+  stroke-linecap:round;
+  transition:stroke-dashoffset 1s var(--ease),stroke var(--t);
+  transform-origin:50% 50%;transform:rotate(-90deg);
+}
+.ring-text-wrap{flex:1;}
+.ring-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:22px;font-weight:300;
+  color:var(--ink-d);letter-spacing:-.01em;margin-bottom:2px;
+}
+.ring-sub{font-size:12px;color:var(--ink-m);letter-spacing:.06em;margin-bottom:10px;}
+.ring-bar-track{height:3px;border-radius:2px;background:var(--vein);overflow:hidden;}
+.ring-bar-fill{height:100%;border-radius:2px;background:var(--ink);transition:width .9s var(--ease);}
+
+/* ── COSMOS LETTER ── */
+.cosmos-lbl{
+  display:flex;align-items:center;gap:7px;margin-bottom:12px;
+  font-family:'Cormorant Garamond',serif;font-size:10px;
+  letter-spacing:.26em;text-transform:uppercase;color:var(--ink);opacity:.75;
+}
+.c-star{width:13px;height:13px;animation:spinS 24s linear infinite;}
+@keyframes spinS{to{transform:rotate(360deg);}}
+.cosmos-body{
+  font-family:'Cormorant Garamond',serif;
+  font-size:15.5px;font-style:italic;font-weight:300;
+  line-height:1.95;color:var(--ink-d);letter-spacing:.01em;
+}
+.cosmos-foot{margin-top:9px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-l);}
+
+/* ── GRATITUDE FLOW STRIP ── */
+.flow-lbl{
+  font-family:'Cormorant Garamond',serif;
+  font-size:10px;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--ink);opacity:.75;margin-bottom:10px;padding-left:2px;
+}
+.flow-track{
+  display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;
+  scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+}
+.flow-card{
+  flex-shrink:0;width:148px;
+  background:var(--card);border:1px solid var(--vein);
+  border-radius:var(--r-xl);padding:14px 14px 16px;
+  scroll-snap-align:start;
+  transition:background var(--t),border-color var(--t);
+}
+.flow-em{font-size:22px;margin-bottom:8px;line-height:1;}
+.flow-txt{
+  font-family:'Cormorant Garamond',serif;
+  font-size:13px;font-style:italic;font-weight:300;
+  line-height:1.7;color:var(--ink-m);
+}
+.flow-add{
+  flex-shrink:0;width:148px;
+  background:rgba(255,255,255,.35);
+  border:1px dashed var(--vein);
+  border-radius:var(--r-xl);padding:14px;
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:6px;
+  font-family:'Cormorant Garamond',serif;
+  font-size:12px;font-style:italic;color:var(--ink-l);
+  cursor:pointer;scroll-snap-align:start;
+  transition:all .16s;
+}
+.flow-add:active{background:var(--card);}
+.flow-add-icon{font-size:20px;opacity:.5;}
+
+/* ── ACTION BUTTONS ── */
+.act-stack{display:flex;flex-direction:column;gap:10px;}
+.btn-solid{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;min-height:52px;
+  background:var(--ink-d);color:var(--bg);
+  border-radius:var(--r-lg);
+  font-family:'Noto Serif TC',serif;font-size:15px;font-weight:400;
+  letter-spacing:.08em;transition:all .16s var(--ease);
+}
+.btn-solid:active{transform:scale(.96);opacity:.88;}
+.btn-outline{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;min-height:50px;
+  background:transparent;border:1px solid var(--ink);
+  color:var(--ink-d);border-radius:var(--r-lg);
+  font-family:'Noto Serif TC',serif;font-size:15px;font-weight:300;
+  letter-spacing:.06em;transition:all .16s var(--ease);
+}
+.btn-outline:active{background:rgba(255,255,255,.5);transform:scale(.96);}
+.btn-ghost{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;min-height:48px;
+  background:transparent;border:1px solid var(--vein);color:var(--ink-m);
+  border-radius:var(--r-lg);
+  font-family:'Noto Serif TC',serif;font-size:14px;font-weight:300;
+  letter-spacing:.05em;transition:all .16s var(--ease);
+}
+.btn-ghost:active{opacity:.60;}
+.btn-commit{
+  width:100%;min-height:52px;background:transparent;
+  border:1px solid var(--ink);border-radius:var(--r-pill);
+  font-family:'Cormorant Garamond',serif;
+  font-size:18px;font-style:italic;font-weight:300;
+  letter-spacing:.12em;color:var(--ink-d);
+  transition:all .16s var(--ease);margin-top:6px;
+}
+.btn-commit:active{background:rgba(255,255,255,.5);transform:scale(.98);}
+
+/* ═══════════════════════════════════════════════════
+   JOURNAL PAGE
+═══════════════════════════════════════════════════ */
+.aff-row{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:11px 0;border-bottom:1px solid var(--vein);cursor:pointer;
+}
+.aff-row:last-child{border-bottom:none;}
+.aff-chk{
+  width:20px;height:20px;border-radius:50%;
+  border:1.5px solid var(--ink);flex-shrink:0;margin-top:2px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;color:white;transition:all .2s var(--spring);
+}
+.aff-row.on .aff-chk{background:var(--ink-d);border-color:var(--ink-d);transform:scale(1.1);}
+.aff-txt{
+  flex:1;font-family:'Noto Serif TC',serif;font-size:14px;font-weight:300;
+  line-height:1.65;color:var(--ink-m);transition:color .18s;cursor:text;
+}
+.aff-row.on .aff-txt{color:var(--ink-d);}
+.aff-add-row{
+  display:flex;align-items:center;gap:10px;
+  padding-top:12px;border-top:1px solid var(--vein);margin-top:10px;
+}
+.aff-add-in{
+  flex:1;background:transparent;border:none;outline:none;
+  font-size:13px;font-family:'Noto Serif TC',serif;
+  color:var(--ink-d);caret-color:var(--ink);padding:4px 0;
+}
+.aff-add-in::placeholder{color:var(--ink-l);font-style:italic;}
+.plus-btn{
+  width:30px;height:30px;border-radius:var(--r-pill);
+  border:1.5px solid var(--ink);color:var(--ink-d);
+  font-size:20px;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;line-height:1;transition:all .16s var(--spring);
+}
+.plus-btn:active{transform:scale(.84);background:rgba(255,255,255,.5);}
+
+.jfield{
+  width:100%;background:transparent;border:none;
+  border-bottom:1px solid var(--vein);
+  padding:10px 0 12px;
+  font-family:'Noto Serif TC',serif;font-size:15px;font-weight:300;
+  color:var(--ink-d);outline:none;caret-color:var(--ink);
+  transition:border-color .18s;
+}
+.jfield:focus{border-bottom-color:var(--ink);}
+.jfield::placeholder{color:var(--ink-l);font-style:italic;}
+.grat-row{display:flex;align-items:flex-start;gap:12px;padding:6px 0;border-bottom:1px solid var(--vein);}
+.grat-row:last-child{border-bottom:none;}
+.grat-n{
+  font-family:'Cormorant Garamond',serif;font-size:12px;
+  font-style:italic;color:var(--ink);opacity:.7;
+  padding-top:11px;flex-shrink:0;width:18px;
+}
+.grat-in{
+  flex:1;background:transparent;border:none;outline:none;
+  padding:9px 0;font-family:'Noto Serif TC',serif;
+  font-size:14px;font-weight:300;color:var(--ink-d);caret-color:var(--ink);
+}
+.grat-in::placeholder{color:var(--ink-l);font-style:italic;}
+.save-toast{
+  text-align:center;font-family:'Cormorant Garamond',serif;
+  font-size:12px;font-style:italic;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink);opacity:0;transition:opacity .4s;padding:8px;
+}
+.save-toast.on{opacity:.75;}
+
+/* ═══════════════════════════════════════════════════
+   FINANCE PAGE
+═══════════════════════════════════════════════════ */
+.fin-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.fin-stat{
+  background:var(--card);border:1px solid var(--vein);
+  border-radius:var(--r-lg);padding:14px 10px;
+  transition:background var(--t),border-color var(--t);
+}
+.fin-lbl{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-l);margin-bottom:5px;}
+.fin-val{
+  font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;color:var(--ink-d);
+}
+.fin-val.pos{color:var(--ink);}
+
+/* MOOD SELECTOR */
+.mood-section{margin-bottom:18px;}
+.mood-lbl{
+  font-size:10px;letter-spacing:.20em;text-transform:uppercase;
+  color:var(--ink-l);margin-bottom:10px;
+  font-family:'Cormorant Garamond',serif;
+}
+.mood-row{display:flex;gap:10px;flex-wrap:wrap;}
+.mood-btn{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:10px 12px;border-radius:var(--r-xl);
+  background:rgba(255,255,255,.4);border:1px solid var(--vein);
+  font-size:22px;cursor:pointer;transition:all .18s var(--spring);
+}
+.mood-name{font-size:10px;letter-spacing:.06em;color:var(--ink-m);}
+.mood-btn:active{transform:scale(.9);}
+.mood-btn.on{
+  background:var(--card);border-color:var(--ink);
+  box-shadow:0 0 0 2px color-mix(in srgb, var(--ink) 20%, transparent);
+}
+
+.type-sw{
+  display:flex;background:rgba(255,255,255,.35);
+  border:1px solid var(--vein);border-radius:var(--r-pill);
+  padding:3px;margin-bottom:16px;
+}
+.type-btn{
+  flex:1;padding:10px;border-radius:var(--r-pill);
+  font-family:'Noto Serif TC',serif;font-size:13px;font-weight:300;
+  letter-spacing:.05em;color:var(--ink-m);transition:all .22s var(--ease);
+}
+.type-btn.on{background:white;color:var(--ink-d);}
+
+.cat-wrap{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+.cat-chip{
+  padding:7px 14px;border-radius:var(--r-pill);
+  border:1px solid var(--vein);
+  font-size:12px;font-family:'Noto Serif TC',serif;font-weight:300;
+  color:var(--ink-m);transition:all .16s var(--ease);letter-spacing:.03em;
+}
+.cat-chip:active{transform:scale(.94);}
+.cat-chip.on{background:rgba(255,255,255,.6);border-color:var(--ink);color:var(--ink-d);}
+
+.rec-list{display:flex;flex-direction:column;gap:10px;}
+.rec-item{
+  display:flex;align-items:center;gap:14px;
+  padding:14px 16px;
+  background:var(--card);border:1px solid var(--vein);
+  border-radius:var(--r-lg);
+  animation:up .3s var(--ease) both;
+  transition:background var(--t),border-color var(--t);
+}
+.rec-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.rec-dot.income{background:var(--ink);}
+.rec-dot.expense{background:var(--ink-l);}
+.rec-body{flex:1;min-width:0;}
+.rec-desc{font-size:14px;color:var(--ink-d);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rec-meta{font-size:11px;color:var(--ink-l);letter-spacing:.04em;}
+.rec-right{text-align:right;flex-shrink:0;}
+.rec-amt{
+  font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:300;
+  line-height:1.2;margin-bottom:4px;
+}
+.rec-amt.income{color:var(--ink);}
+.rec-amt.expense{color:var(--ink-m);}
+.rec-btns{display:flex;gap:10px;justify-content:flex-end;}
+.rec-btn{font-size:11px;letter-spacing:.06em;color:var(--ink-l);font-family:'Noto Serif TC',serif;transition:color .16s;padding:2px 0;}
+.rec-btn:hover{color:var(--ink-d);}
+.empty-rec{
+  text-align:center;padding:44px 20px;
+  font-family:'Cormorant Garamond',serif;font-size:15px;font-style:italic;font-weight:300;
+  color:var(--ink-l);line-height:2;
+}
+.sec-lbl{
+  font-size:10px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--ink-l);font-family:'Cormorant Garamond',serif;
+  margin-bottom:12px;padding-left:2px;
+}
+
+/* ═══════════════════════════════════════════════════
+   OVERLAYS — BOTTOM SHEETS
+═══════════════════════════════════════════════════ */
+.overlay{
+  position:fixed;inset:0;z-index:100;
+  opacity:0;pointer-events:none;
+  transition:opacity .28s var(--ease);
+  display:flex;align-items:flex-end;
+}
+.overlay.open{opacity:1;pointer-events:all;}
+
+.ov-scrim{
+  position:absolute;inset:0;
+  background:rgba(0,0,0,.18);
+  backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
+}
+.ov-sheet{
+  position:relative;width:100%;max-width:430px;margin:0 auto;
+  background:var(--bg);
+  border-radius:28px 28px 0 0;
+  border:1px solid var(--vein);border-bottom:none;
+  transform:translateY(100%);
+  transition:transform .42s cubic-bezier(.32,.72,0,1),background var(--t);
+  overflow-y:auto;
+}
+.overlay.open .ov-sheet{transform:translateY(0);}
+.sh-handle{width:36px;height:4px;border-radius:2px;background:var(--vein);margin:14px auto 20px;}
+.sh-title{
+  font-family:'Cormorant Garamond',serif;font-size:13px;font-style:italic;
+  font-weight:300;letter-spacing:.20em;text-transform:uppercase;
+  color:var(--ink-l);text-align:center;margin-bottom:20px;
+}
+/* sheet inner padding */
+.sh-pad{padding:0 22px 52px;}
+
+/* FINANCE INPUT SHEET */
+.amt-row{
+  display:flex;align-items:baseline;gap:8px;
+  border-bottom:1.5px solid var(--ink);
+  padding-bottom:12px;margin-bottom:16px;
+}
+.amt-sym{
+  font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;
+  color:var(--ink-l);flex-shrink:0;
+}
+.amt-in{
+  flex:1;background:transparent;border:none;outline:none;
+  font-family:'Cormorant Garamond',serif;font-size:42px;font-weight:300;
+  color:var(--ink-d);caret-color:var(--ink);min-width:0;
+}
+.amt-in::placeholder{color:var(--ink-l);}
+.amt-in.pop{animation:amtP .32s var(--spring);}
+@keyframes amtP{0%{transform:translateY(8px);opacity:0;}60%{transform:translateY(-3px);}100%{transform:translateY(0);opacity:1;}}
+.desc-in{
+  width:100%;background:transparent;border:none;
+  border-bottom:1px solid var(--vein);outline:none;
+  padding:10px 0 12px;font-family:'Noto Serif TC',serif;
+  font-size:14px;font-weight:300;color:var(--ink-d);
+  caret-color:var(--ink);margin-bottom:14px;transition:border-color .18s;
+}
+.desc-in:focus{border-bottom-color:var(--ink);}
+.desc-in::placeholder{color:var(--ink-l);font-style:italic;}
+
+/* THEME GRID */
+.theme-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.theme-tile{
+  border-radius:var(--r-lg);overflow:hidden;
+  border:2px solid transparent;cursor:pointer;
+  transition:border-color .18s,transform .16s;
+}
+.theme-tile:active{transform:scale(.94);}
+.theme-tile.on{border-color:var(--ink);}
+.t-sw{display:flex;height:50px;}
+.t-s{flex:1;}
+.t-name{padding:8px 10px;font-size:12px;font-family:'Noto Serif TC',serif;font-weight:300;letter-spacing:.06em;text-align:center;}
+
+/* BUBBLE DETAIL SHEET */
+.bubble-quote{
+  text-align:center;padding:0 4px 8px;
+}
+.bq-em{font-size:36px;margin-bottom:16px;}
+.bq-txt{
+  font-family:'Cormorant Garamond',serif;
+  font-size:19px;font-style:italic;font-weight:300;
+  line-height:2;color:var(--ink-d);letter-spacing:.02em;
+}
+
+/* MOOD AFFIRMATION in feedback sheet */
+.fb-sym{
+  font-family:'Cormorant Garamond',serif;font-size:36px;font-style:italic;
+  color:var(--ink);text-align:center;margin-bottom:16px;
+  animation:fbP 3.5s ease-in-out infinite;
+}
+@keyframes fbP{0%,100%{opacity:.7;transform:scale(1);}50%{opacity:1;transform:scale(1.06);}}
+.fb-title{
+  font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:300;
+  color:var(--ink-d);line-height:1.4;margin-bottom:10px;text-align:center;
+}
+.fb-msg{font-size:14px;font-weight:300;color:var(--ink-m);line-height:2;margin-bottom:28px;text-align:center;}
+
+/* DREAM SHEET */
+.dream-prev{
+  width:100%;height:120px;border-radius:var(--r-xl);
+  background:rgba(255,255,255,.4);
+  border:1px dashed var(--vein);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Cormorant Garamond',serif;font-style:italic;
+  font-size:13px;color:var(--ink-l);
+  margin-bottom:14px;overflow:hidden;
+  background-size:cover;background-position:center;
+  transition:all .4s;
+}
+.dream-in{
+  width:100%;background:rgba(255,255,255,.4);
+  border:1px solid var(--vein);border-radius:var(--r-lg);
+  padding:12px 14px;font-family:'Noto Serif TC',serif;
+  font-size:13px;color:var(--ink-d);outline:none;caret-color:var(--ink);
+  margin-bottom:14px;
+}
+.dream-op-lbl{font-size:11px;color:var(--ink-m);margin-bottom:8px;letter-spacing:.1em;}
+.dream-range{width:100%;accent-color:var(--ink-d);margin-bottom:20px;}
+
+/* QUOTE EDIT */
+.qedit-ta{
+  width:100%;min-height:96px;
+  background:rgba(255,255,255,.45);
+  border:1px solid var(--ink);border-radius:var(--r-lg);
+  padding:14px 16px;
+  font-family:'Noto Serif TC',serif;font-size:15px;font-weight:300;
+  color:var(--ink-d);outline:none;resize:none;caret-color:var(--ink);
+  line-height:1.9;margin-bottom:16px;
+  transition:background var(--t),border-color var(--t);
+}
+
+/* GAP */
+.g8{height:8px;}.g16{height:16px;}
+</style>
+
+</head>
+<body>
+<div id="app" data-theme="t7">
+
+  <!-- TOP BAR -->
+
+  <div id="topbar">
+    <div class="top-left">
+      <div class="top-eyebrow">ABUNDANCE · RITUAL</div>
+      <div class="top-title" id="page-title">晨間儀式</div>
+    </div>
+    <div class="top-right">
+      <button class="icon-btn" onclick="openDream()" aria-label="夢想畫廊">✦</button>
+      <button class="icon-btn" onclick="openTheme()" aria-label="選擇主題">🎨</button>
+    </div>
+  </div>
+
+  <!-- PAGES -->
+
+  <div id="pages">
+
+```
+<!-- ═══ RITUAL ═══ -->
+<div class="page active" id="page-ritual">
+
+  <!-- Date -->
+  <div class="date-strip anim">
+    <div class="ds-big" id="ds-num"></div>
+    <div class="ds-right">
+      <div class="ds-day"   id="ds-day"></div>
+      <div class="ds-month" id="ds-month"></div>
+    </div>
+  </div>
+
+  <!-- Garden — plant + floating bubbles -->
+  <div class="garden-stage">
+    <div class="dream-layer" id="dream-layer"></div>
+
+    <!-- Bubbles -->
+    <div class="bubble-wrap">
+      <div class="bubble" onclick="openBubble(0)" title="宇宙金句">✨</div>
+      <div class="bubble" onclick="openBubble(1)" title="豐盛秘語">🌿</div>
+      <div class="bubble" onclick="openBubble(2)" title="今日祝福">💛</div>
+    </div>
+
+    <!-- Plant SVG -->
+    <svg id="plant-svg" viewBox="0 0 320 200" width="280" style="max-height:200px;position:relative;z-index:2">
+      <defs>
+        <radialGradient id="rH2" cx="50%" cy="100%" r="50%">
+          <stop offset="0%"   stop-color="var(--ink)" stop-opacity=".20"/>
+          <stop offset="100%" stop-color="var(--ink)" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="aH2" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"   stop-color="var(--ink)" stop-opacity=".60"/>
+          <stop offset="100%" stop-color="var(--ink)" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <g class="plant-g">
+        <ellipse cx="160" cy="190" rx="66" ry="10" fill="url(#rH2)"
+          style="animation:rB 5s ease-in-out infinite;"/>
+        <!-- stem -->
+        <path class="ps" d="M160 188 C159 168 161 148 159 124 C157 100 160 80 160 58 C160 42 160 28 160 16"
+          stroke-width="1.2" stroke-opacity=".65"
+          stroke-dasharray="470" stroke-dashoffset="0"
+          style="animation:sD 2.2s ease-out .3s both;"/>
+        <!-- branches -->
+        <path class="ps" d="M159 156 C146 146 128 134 108 122" stroke-width=".95" stroke-dasharray="220" stroke-dashoffset="0" style="animation:bD 1.6s ease-out .7s both;stroke-opacity:.50;"/>
+        <path class="ps" d="M108 122 C96 114 84 103 76 90"     stroke-width=".70" stroke-dasharray="160" stroke-dashoffset="0" style="animation:bD 1.4s ease-out .95s both;stroke-opacity:.34;"/>
+        <path class="ps" d="M160 168 C172 158 190 146 210 134" stroke-width=".95" stroke-dasharray="220" stroke-dashoffset="0" style="animation:bD 1.6s ease-out .8s both;stroke-opacity:.50;"/>
+        <path class="ps" d="M210 134 C222 125 232 114 240 102" stroke-width=".70" stroke-dasharray="160" stroke-dashoffset="0" style="animation:bD 1.4s ease-out 1.05s both;stroke-opacity:.34;"/>
+        <path class="ps" d="M159 118 C148 110 134 102 118 94"  stroke-width=".88" stroke-dasharray="160" stroke-dashoffset="0" style="animation:bD 1.4s ease-out 1.0s both;stroke-opacity:.44;"/>
+        <path class="ps" d="M160 106 C170 98 185 90 202 82"   stroke-width=".88" stroke-dasharray="160" stroke-dashoffset="0" style="animation:bD 1.4s ease-out 1.1s both;stroke-opacity:.44;"/>
+        <path class="ps" d="M160 76 C152 68 140 60 128 50"    stroke-width=".76" stroke-dasharray="120" stroke-dashoffset="0" style="animation:bD 1.2s ease-out 1.3s both;stroke-opacity:.38;"/>
+        <path class="ps" d="M160 66 C168 58 178 50 190 42"    stroke-width=".76" stroke-dasharray="120" stroke-dashoffset="0" style="animation:bD 1.2s ease-out 1.4s both;stroke-opacity:.38;"/>
+        <!-- nodes -->
+        <circle class="pg" cx="108" cy="122" r="2"   fill-opacity=".72" style="animation:nP 2.8s ease-in-out .0s infinite;"/>
+        <circle class="pg" cx="76"  cy="90"  r="1.5" fill-opacity=".50" style="animation:nP 3.2s ease-in-out .3s infinite;"/>
+        <circle class="pg" cx="210" cy="134" r="2"   fill-opacity=".72" style="animation:nP 2.6s ease-in-out .5s infinite;"/>
+        <circle class="pg" cx="240" cy="102" r="1.5" fill-opacity=".50" style="animation:nP 3.0s ease-in-out .7s infinite;"/>
+        <circle class="pg" cx="118" cy="94"  r="1.8" fill-opacity=".60" style="animation:nP 2.9s ease-in-out .2s infinite;"/>
+        <circle class="pg" cx="202" cy="82"  r="1.8" fill-opacity=".60" style="animation:nP 2.7s ease-in-out .4s infinite;"/>
+        <circle class="pg" cx="128" cy="50"  r="1.5" fill-opacity=".50" style="animation:nP 3.1s ease-in-out .6s infinite;"/>
+        <circle class="pg" cx="190" cy="42"  r="1.5" fill-opacity=".50" style="animation:nP 2.5s ease-in-out .9s infinite;"/>
+        <circle class="pg" cx="159" cy="124" r="1.8" fill-opacity=".58" style="animation:nP 3.3s ease-in-out .1s infinite;"/>
+        <circle class="pg" cx="160" cy="92"  r="1.6" fill-opacity=".54" style="animation:nP 2.8s ease-in-out .8s infinite;"/>
+        <!-- particles -->
+        <circle class="pg" cx="78"  cy="87"  r=".9" style="animation:pF 4.0s ease-in-out .0s infinite;"/>
+        <circle class="pg" cx="241" cy="99"  r=".8" style="animation:pF 4.5s ease-in-out 1.2s infinite;"/>
+        <circle class="pg" cx="129" cy="47"  r=".8" style="animation:pF 3.8s ease-in-out .6s infinite;"/>
+        <circle class="pg" cx="191" cy="39"  r=".7" style="animation:pF 4.2s ease-in-out 1.8s infinite;"/>
+        <circle class="pg" cx="160" cy="16"  r=".9" style="animation:pF 3.5s ease-in-out .9s infinite;"/>
+        <!-- apex glow -->
+        <circle cx="160" cy="16" r="18" fill="url(#aH2)" style="animation:aG 3.5s ease-in-out infinite;"/>
+        <circle class="pg" cx="160" cy="16" r="3" fill-opacity=".95" style="animation:aG 3.5s ease-in-out infinite;"/>
+      </g>
+    </svg>
+  </div>
+
+  <!-- Quote -->
+  <div class="card anim anim-1" style="position:relative">
+    <button class="quote-edit" onclick="openQEdit()">✎</button>
+    <div class="eyebrow">我的顯化宣言</div>
+    <div class="quote-txt" id="quote-txt"></div>
+    <div class="q-nav">
+      <button class="q-arr" onclick="prevQ()">‹</button>
+      <div class="q-dots" id="q-dots"></div>
+      <button class="q-arr" onclick="nextQ()">›</button>
+    </div>
+  </div>
+
+  <!-- Ring progress + counter -->
+  <div class="card anim anim-2">
+    <div class="eyebrow">豐盛能量</div>
+    <div class="ring-wrap">
+      <!-- Ring SVG -->
+      <svg class="ring-svg" width="88" height="88" viewBox="0 0 88 88">
+        <circle class="ring-bg-c" cx="44" cy="44" r="37"/>
+        <circle class="ring-fg-c" id="ring-fg" cx="44" cy="44" r="37"
+          stroke-dasharray="232.5" stroke-dashoffset="232.5"/>
+        <!-- inner text -->
+        <text x="44" y="40" text-anchor="middle"
+          font-family="Cormorant Garamond,serif" font-size="17" font-weight="300"
+          fill="var(--ink-d)" id="ring-pct-txt">0%</text>
+        <text x="44" y="56" text-anchor="middle"
+          font-family="Noto Sans TC,sans-serif" font-size="8"
+          fill="var(--ink-l)" letter-spacing="1">豐盛值</text>
+      </svg>
+      <div class="ring-text-wrap">
+        <div class="ring-title">
+          <span id="cnt-votes">0</span> <span style="font-size:14px;font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--ink-m)">票</span>
+        </div>
+        <div class="ring-sub">為未來投下的顯化票</div>
+        <div class="ring-bar-track">
+          <div class="ring-bar-fill" id="ring-bar" style="width:0%"></div>
+        </div>
+        <div style="font-size:11px;color:var(--ink-l);margin-top:6px;letter-spacing:.06em">能量 <span id="cnt-energy">0</span> / 1000</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cosmos letter -->
+  <div class="card anim anim-3">
+    <div class="cosmos-lbl">
+      <svg class="c-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+        <polygon points="12,2 14.9,9.1 22.5,9.3 16.9,14.1 18.8,21.7 12,17.8 5.2,21.7 7.1,14.1 1.5,9.3 9.1,9.1"/>
+      </svg>
+      宇宙每日信件
+    </div>
+    <div class="cosmos-body" id="cosmos-txt"></div>
+    <div class="cosmos-foot" id="cosmos-foot"></div>
+  </div>
+
+  <!-- Gratitude flow strip -->
+  <div class="anim anim-4" style="margin-bottom:14px">
+    <div class="flow-lbl">今日感恩流動</div>
+    <div class="flow-track" id="flow-track"></div>
+  </div>
+
+  <!-- Action choices -->
+  <div style="font-family:'Cormorant Garamond',serif;font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:var(--ink);opacity:.75;margin-bottom:12px;padding-left:2px;" class="anim anim-5">今天，我——</div>
+  <div class="act-stack anim anim-5">
+    <button class="btn-solid"   onclick="ritualAct('save')">◇ &nbsp;我存了一筆</button>
+    <button class="btn-outline" onclick="ritualAct('spend')">○ &nbsp;我花了一筆</button>
+    <button class="btn-ghost"   onclick="ritualAct('pause')">· &nbsp;我還沒行動，但我已準備好</button>
+  </div>
+  <div class="g16"></div>
+</div><!-- /ritual -->
+
+<!-- ═══ JOURNAL ═══ -->
+<div class="page" id="page-journal">
+  <div class="card anim">
+    <div class="eyebrow">肯定句</div>
+    <div id="aff-list"></div>
+    <div class="aff-add-row">
+      <input class="aff-add-in" id="aff-in" placeholder="新增屬於你的肯定句…" maxlength="80">
+      <button class="plus-btn" onclick="addAff()">+</button>
+    </div>
+  </div>
+  <div class="card anim anim-1">
+    <div class="eyebrow">今日吸引</div>
+    <textarea class="jfield" id="j-attract" placeholder="今天，我吸引到了…" rows="2"></textarea>
+  </div>
+  <div class="card anim anim-2">
+    <div class="eyebrow">我今天成為誰</div>
+    <textarea class="jfield" id="j-became" placeholder="今天，我活出了…" rows="2"></textarea>
+  </div>
+  <div class="card anim anim-3">
+    <div class="eyebrow">已經實現</div>
+    <textarea class="jfield" id="j-realized" placeholder="我已經擁有… · 我已經成為…" rows="3"></textarea>
+  </div>
+  <div class="card anim anim-4">
+    <div class="eyebrow">感恩清單</div>
+    <div class="grat-row"><span class="grat-n">I</span>  <input class="grat-in" id="g1" placeholder="我感恩…"></div>
+    <div class="grat-row"><span class="grat-n">II</span> <input class="grat-in" id="g2" placeholder="我感恩…"></div>
+    <div class="grat-row"><span class="grat-n">III</span><input class="grat-in" id="g3" placeholder="我感恩…"></div>
+  </div>
+  <div class="card anim anim-5">
+    <div class="eyebrow">今日行動</div>
+    <input class="jfield" id="j-action" placeholder="今天我選擇做到…">
+  </div>
+  <button class="btn-commit" onclick="saveJournal()">記下這一刻</button>
+  <div class="save-toast" id="save-toast">· 已靜靜記下 ·</div>
+  <div class="g16"></div>
+</div><!-- /journal -->
+
+<!-- ═══ FINANCE ═══ -->
+<div class="page" id="page-finance">
+  <div class="fin-stats anim">
+    <div class="fin-stat"><div class="fin-lbl">收入</div><div class="fin-val pos" id="fs-inc">$0</div></div>
+    <div class="fin-stat"><div class="fin-lbl">支出</div><div class="fin-val"    id="fs-exp">$0</div></div>
+    <div class="fin-stat"><div class="fin-lbl">結餘</div><div class="fin-val"    id="fs-bal">$0</div></div>
+  </div>
+  <!-- Trigger bottom drawer -->
+  <button class="card anim anim-1" onclick="openFinDrawer()"
+    style="width:100%;text-align:left;cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:20px 20px">
+    <div>
+      <div class="eyebrow" style="margin-bottom:4px">記下這一筆</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:15px;font-style:italic;color:var(--ink-m)">點擊開始記帳 →</div>
+    </div>
+    <span style="font-size:26px;opacity:.4">＋</span>
+  </button>
+  <div class="sec-lbl anim anim-2">近期記錄</div>
+  <div class="rec-list anim anim-3" id="rec-list"></div>
+  <div class="g16"></div>
+</div><!-- /finance -->
+```
+
+  </div><!-- /pages -->
+
+  <!-- TAB BAR -->
+
+  <div id="tabbar">
+    <button class="tab-item active" onclick="goTab('ritual',this)">
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+        <line x1="12" y1="20" x2="12" y2="6"/>
+        <path d="M12 9 C10.5 7 7 7 6 9 C5 11 7 15 12 15 C17 15 19 11 18 9 C17 7 13.5 7 12 9"/>
+      </svg>
+      <span class="tab-label">儀式</span>
+    </button>
+    <button class="tab-item" onclick="goTab('journal',this)">
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+        <rect x="5" y="3" width="13" height="18" rx="2"/>
+        <line x1="9" y1="8"  x2="15" y2="8"/>
+        <line x1="9" y1="12" x2="15" y2="12"/>
+        <line x1="9" y1="16" x2="13" y2="16"/>
+      </svg>
+      <span class="tab-label">日記</span>
+    </button>
+    <button class="tab-item" onclick="goTab('finance',this)">
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M12 7v2M12 15v2M9 10.5c0-1.1 1.3-2 3-2s3 .9 3 2-1.3 1.5-3 1.5-3 .9-3 2 1.3 2 3 2 3-.9 3-2"/>
+      </svg>
+      <span class="tab-label">記帳</span>
+    </button>
+  </div>
+</div><!-- /app -->
+
+<!-- ═══════════════ OVERLAYS ═══════════════ -->
+
+<!-- Theme Picker -->
+
+<div class="overlay" id="ov-theme">
+  <div class="ov-scrim" onclick="closeTheme()"></div>
+  <div class="ov-sheet" style="max-height:72vh">
+    <div class="sh-handle"></div>
+    <div class="sh-title">選擇今日光線</div>
+    <div class="sh-pad" style="padding-top:0">
+      <div class="theme-grid" id="theme-grid"></div>
+      <div class="g8"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Feedback -->
+
+<div class="overlay" id="ov-fb">
+  <div class="ov-scrim" onclick="closeFb()"></div>
+  <div class="ov-sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-pad">
+      <div class="fb-sym"   id="fb-sym">◇</div>
+      <div class="fb-title" id="fb-title"></div>
+      <div class="fb-msg"   id="fb-msg"></div>
+      <button class="btn-commit" style="max-width:280px;margin:0 auto;display:block" onclick="closeFb()">帶著這份感覺前行</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bubble detail -->
+
+<div class="overlay" id="ov-bubble">
+  <div class="ov-scrim" onclick="closeBubble()"></div>
+  <div class="ov-sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-pad">
+      <div class="bubble-quote">
+        <div class="bq-em" id="bq-em"></div>
+        <div class="bq-txt" id="bq-txt"></div>
+      </div>
+      <div class="g16"></div>
+      <button class="btn-commit" onclick="closeBubble()">收下這份禮物</button>
+    </div>
+  </div>
+</div>
+
+<!-- Finance drawer — full input bottom sheet -->
+
+<div class="overlay" id="ov-fin">
+  <div class="ov-scrim" onclick="closeFinDrawer()"></div>
+  <div class="ov-sheet" style="max-height:90vh">
+    <div class="sh-handle"></div>
+    <div class="sh-title">記下這一筆</div>
+    <div class="sh-pad" style="padding-top:0">
+      <!-- type toggle -->
+      <div class="type-sw" style="margin-bottom:18px">
+        <button class="type-btn on" id="tt-inc" onclick="setFType('income')">收入</button>
+        <button class="type-btn"    id="tt-exp" onclick="setFType('expense')">支出</button>
+      </div>
+      <!-- amount -->
+      <div class="amt-row">
+        <span class="amt-sym">$</span>
+        <input class="amt-in" id="fin-amt" type="number" inputmode="decimal"
+          placeholder="0" oninput="onAmt(this)">
+      </div>
+      <!-- description -->
+      <input class="desc-in" id="fin-desc" placeholder="這筆是…（可留白）">
+      <!-- category -->
+      <div class="eyebrow" style="margin-bottom:10px">分類</div>
+      <div class="cat-wrap" id="cat-wrap"></div>
+      <!-- mood -->
+      <div class="mood-section">
+        <div class="mood-lbl">今日心情</div>
+        <div class="mood-row" id="mood-row"></div>
+      </div>
+      <!-- commit -->
+      <button class="btn-commit" onclick="addRecord()">完成今天</button>
+      <div class="g8"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Dream Gallery -->
+
+<div class="overlay" id="ov-dream">
+  <div class="ov-scrim" onclick="closeDream()"></div>
+  <div class="ov-sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-title">夢想畫廊</div>
+    <div class="sh-pad" style="padding-top:0">
+      <div class="dream-prev" id="dream-prev">
+        <span id="dream-prev-txt">貼上你夢想的圖片連結</span>
+      </div>
+      <input class="dream-in" id="dream-url" placeholder="https://…" oninput="prevDream(this.value)">
+      <div class="dream-op-lbl">透明度 <span id="dream-op-val">8%</span></div>
+      <input class="dream-range" id="dream-range" type="range" min="3" max="28" value="8"
+        oninput="updDreamOp(this.value)">
+      <button class="btn-commit" onclick="saveDream()">將這個夢想種進花園</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Record -->
+
+<div class="overlay" id="ov-edit">
+  <div class="ov-scrim" onclick="closeEdit()"></div>
+  <div class="ov-sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-title">修改這一筆</div>
+    <div class="sh-pad" style="padding-top:0">
+      <input class="desc-in" id="edit-desc" placeholder="描述…">
+      <div class="amt-row" style="margin-bottom:20px">
+        <span class="amt-sym">$</span>
+        <input class="amt-in" id="edit-amt" type="number" inputmode="decimal">
+      </div>
+      <button class="btn-commit" onclick="saveEdit()">完成修改</button>
+    </div>
+  </div>
+</div>
+
+<!-- Quote Edit -->
+
+<div class="overlay" id="ov-qedit" style="z-index:110">
+  <div class="ov-scrim" onclick="closeQEdit()"></div>
+  <div class="ov-sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-title">編輯顯化句</div>
+    <div class="sh-pad" style="padding-top:0">
+      <textarea class="qedit-ta" id="qedit-ta" placeholder="寫下你的顯化句…"></textarea>
+      <button class="btn-commit" onclick="saveQEdit()">記下這一刻</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ SCRIPT ═══════════════ -->
+
+<script>
+/* ────── DATA ────── */
+const THEMES=[
+  {id:'t1',name:'薄霧',  bg:'#EEF2FA',p1:'#CDD5E8',p2:'#7A8CB0',p3:'#2C3E6E'},
+  {id:'t2',name:'晨曦',  bg:'#FBF5EA',p1:'#EDD9B4',p2:'#C0784A',p3:'#6A3010'},
+  {id:'t3',name:'玫瑰',  bg:'#FFF5F5',p1:'#F2D0D0',p2:'#D58D8D',p3:'#7A2A2A'},
+  {id:'t4',name:'餘燼',  bg:'#F8F0E8',p1:'#D9C0A4',p2:'#B06030',p3:'#52280A'},
+  {id:'t5',name:'鼠尾草',bg:'#F2F9F2',p1:'#C8DEC6',p2:'#7A9D7A',p3:'#1E4020'},
+  {id:'t6',name:'暮色',  bg:'#F3F0FB',p1:'#D4C8F0',p2:'#8068C0',p3:'#2E1E62'},
+  {id:'t7',name:'霧紫',  bg:'#F6F5FF',p1:'#D3C5E7',p2:'#9D8DB5',p3:'#4A3F7A'},
+  {id:'t8',name:'晨霜',  bg:'#F5F8FA',p1:'#C8DDE8',p2:'#7A9EB0',p3:'#1E3C50'},
+];
+
+const QUOTES=[
+  '我已經擁有海邊的別墅，\n感受著海風的自由',
+  '宇宙已在為你的豐盛鋪路，\n你只需要相信，並踏出下一步。',
+  '你值得擁有最好的一切，\n而這一切，已經在來的路上。',
+  '感恩是最強大的顯化工具，\n此刻的你，已擁有足夠的力量。',
+  '每一個選擇都是宣告，\n今天，你選擇豐盛。',
+  '先成為，才能擁有。\n你的內在世界創造外在現實。',
+];
+
+const COSMOS=[
+  '今天，你已踏上豐盛之路。宇宙正在為你準備，那些你還看不見的禮物。',
+  '親愛的靈魂，你的每一個感恩，都是在向宇宙下訂單。繼續許願吧。',
+  '你以為你在等待奇蹟，其實奇蹟正在等待你準備好。你已準備好了。',
+  '豐盛不是遙遠的地方，它是你現在的狀態。感受它，它就來了。',
+  '今天的你，已比昨天更靠近夢想。即使你沒有感覺到，宇宙知道。',
+  '每一個存下的念頭，都是你對未來自己的投票。',
+  '金錢喜歡流向珍惜它的人。你今天對它說了什麼？',
+  '宇宙的時間表和你的不同，但答案從來都是肯定的。繼續信任。',
+];
+
+const BUBBLES=[
+  {em:'✨',quotes:[
+    '你的欲望，是宇宙送給你的藍圖。',
+    '想像力是創造現實最強大的工具。',
+    '你值得你所能想像的一切美好。',
+  ]},
+  {em:'🌿',quotes:[
+    '豐盛是你的自然狀態，稀缺才是幻覺。',
+    '每一株植物都知道如何繁盛，你也是。',
+    '根扎得越深，枝葉越能在風中自由搖曳。',
+  ]},
+  {em:'💛',quotes:[
+    '感恩是豐盛的磁鐵，感謝越多，擁有越多。',
+    '今天你感恩的，明天將倍數歸來。',
+    '你的心充滿感謝的時刻，就是奇蹟降臨之時。',
+  ]},
+];
+
+const MOODS=[
+  {em:'✨',name:'喜悅',aff:'你的喜悅是最高頻率的顯化能量，此刻宇宙正為你敞開最美的門。'},
+  {em:'🌊',name:'平靜',aff:'在你的平靜之中，有一種深深的力量。平靜的水面，才能映出最清晰的星空。'},
+  {em:'🌸',name:'欣慰',aff:'這份欣慰，是你的靈魂在告訴你：你走在對的路上，一切都在完美展開。'},
+  {em:'🔥',name:'熱情',aff:'你的熱情是宇宙給你最珍貴的禮物。帶著這份火，去點亮你的夢想。'},
+  {em:'🌿',name:'踏實',aff:'踏實的你，正在為豐盛的大樹澆水。每一步，都是一次深根。'},
+  {em:'💛',name:'感恩',aff:'感恩的心是最強大的引力場。你此刻的感恩，正在召喚更多美好向你奔來。'},
+];
+
+const FLOW_DEF=[
+  {em:'🌸',txt:'感恩今天的陽光'},
+  {em:'✨',txt:'感恩健康的身體'},
+  {em:'🌿',txt:'感恩這份安靜'},
+  {em:'💛',txt:'感恩流動的豐盛'},
+];
+
+const CATS={income:['主動收入','被動收入','意外之財'],expense:['必要支出','享受消費','自我投資']};
+const FB_SAVE=[
+  {sym:'◇',title:'未來的你，為現在的你喝采',msg:'每一分存下的，都是你對自己的承諾。那個豐盛的你，正帶著微笑等待著。'},
+  {sym:'◈',title:'你正在種下豐盛的種子',msg:'今天的選擇，是寫給未來自己的情書。財富因你的信任而流向你。'},
+  {sym:'✦',title:'你的內在富足正在成形',msg:'積累是靜默而有力量的過程。未來的你，會感謝今天這個選擇。'},
+];
+const FB_SPEND={
+  '自我投資':{sym:'◌',title:'這是對自己最好的投資',msg:'花在成長上的，從未真正離開你。你正在創造更大版本的自己。'},
+  '享受消費':{sym:'○',title:'你值得美好的事物',msg:'享受當下，是豐盛意識的一部分。這份快樂，是宇宙給你的禮物。'},
+  '必要支出':{sym:'·',title:'你照顧好了生活的根基',msg:'穩定的基礎，讓夢想有地方生長。這是對自己的愛與尊重。'},
+  default:{sym:'◇',title:'每一筆都是有意識的選擇',msg:'你帶著覺知使用金錢，這本身就是豐盛的展現。'},
+};
+const DEFAULT_AFFS=[
+  '我是豐盛的容器，金錢自然流向我',
+  '我的每個決定，帶我走向更好的生活',
+  '我值得擁有財務自由與內心平靜',
+  '我感恩生命中所有的美好與機會',
+];
+const PAGE_T={ritual:'晨間儀式',journal:'顯化日記',finance:'記帳'};
+
+/* ────── STORAGE ────── */
+const gl=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch{return d;}};
+const gs=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}};
+const todayKey=()=>'jrn_'+new Date().toDateString().replace(/ /g,'_');
+
+/* ────── STATE ────── */
+const S={
+  theme:   gl('v7b-theme','t7'),
+  qIdx:    0,
+  quotes:  gl('v7b-quotes',null)||[...QUOTES],
+  affs:    gl('v7b-affs',null)||[...DEFAULT_AFFS],
+  checked: gl('v7b-checked',[]),
+  records: gl('v7b-records',[]),
+  fType:   'income',selCat:'',selMood:'',editId:null,
+  votes:   gl('v7b-votes',0),
+  energy:  gl('v7b-energy',0),
+  journal: gl('v7b_'+todayKey(),{}),
+  dream:   gl('v7b-dream',{url:'',opacity:8}),
+  cosmosIdx:(()=>{
+    const t=new Date().toDateString();
+    if(gl('v7b-cosmos-d','')!==t){const i=Math.floor(Math.random()*COSMOS.length);gs('v7b-cosmos-d',t);gs('v7b-cosmos-i',i);return i;}
+    return gl('v7b-cosmos-i',0);
+  })(),
+};
+
+/* ────── THEME ────── */
+function applyTheme(id){
+  S.theme=id;gs('v7b-theme',id);
+  document.getElementById('app').dataset.theme=id;
+  document.querySelectorAll('.theme-tile').forEach(t=>t.classList.toggle('on',t.dataset.id===id));
+}
+function buildThemeGrid(){
+  const g=document.getElementById('theme-grid');g.innerHTML='';
+  THEMES.forEach(t=>{
+    const el=document.createElement('div');
+    el.className='theme-tile'+(t.id===S.theme?' on':'');
+    el.dataset.id=t.id;
+    el.innerHTML=`<div class="t-sw"><div class="t-s" style="background:${t.bg}"></div><div class="t-s" style="background:${t.p1}"></div><div class="t-s" style="background:${t.p2}"></div><div class="t-s" style="background:${t.p3}"></div></div><div class="t-name" style="background:${t.bg};color:${t.p3}">${t.name}</div>`;
+    el.onclick=()=>{applyTheme(t.id);setTimeout(closeTheme,180);};
+    g.appendChild(el);
+  });
+}
+function openTheme(){buildThemeGrid();document.getElementById('ov-theme').classList.add('open');}
+function closeTheme(){document.getElementById('ov-theme').classList.remove('open');}
+
+/* ────── DATE ────── */
+function initDate(){
+  const n=new Date();
+  const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const MONS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('ds-num').textContent=String(n.getDate()).padStart(2,'0');
+  document.getElementById('ds-day').textContent=DAYS[n.getDay()];
+  document.getElementById('ds-month').textContent=MONS[n.getMonth()]+' '+n.getFullYear();
+}
+
+/* ────── COSMOS ────── */
+function initCosmos(){
+  document.getElementById('cosmos-txt').textContent=COSMOS[S.cosmosIdx];
+  document.getElementById('cosmos-foot').textContent=
+    new Date().toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric'})+' · 宇宙來信';
+}
+
+/* ────── BUBBLES ────── */
+function openBubble(idx){
+  const b=BUBBLES[idx];
+  document.getElementById('bq-em').textContent=b.em;
+  document.getElementById('bq-txt').textContent=b.quotes[Math.floor(Math.random()*b.quotes.length)];
+  document.getElementById('ov-bubble').classList.add('open');
+}
+function closeBubble(){document.getElementById('ov-bubble').classList.remove('open');}
+
+/* ────── RING PROGRESS ────── */
+function updateRing(){
+  const pct=Math.min(100,Math.round((S.energy/1000)*100));
+  const circ=232.5;
+  const offset=circ-(circ*pct/100);
+  document.getElementById('ring-fg').style.strokeDashoffset=offset;
+  document.getElementById('ring-pct-txt').textContent=pct+'%';
+  document.getElementById('ring-bar').style.width=pct+'%';
+  document.getElementById('cnt-votes').textContent=S.votes;
+  document.getElementById('cnt-energy').textContent=S.energy;
+}
+
+function bumpCounter(type){
+  S.votes+=1;
+  S.energy+=(type==='save'||type==='income'?50:type==='expense'?20:10);
+  gs('v7b-votes',S.votes);gs('v7b-energy',S.energy);
+  updateRing();
+}
+
+/* ────── GRATITUDE FLOW ────── */
+function renderFlow(){
+  const track=document.getElementById('flow-track');
+  track.innerHTML='';
+  const j=S.journal;
+  const saved=[j.g1,j.g2,j.g3].filter(Boolean);
+  const items=saved.length?saved.map((t,i)=>({em:['🌸','✨','💛'][i]||'🌿',txt:t})):FLOW_DEF;
+  items.forEach(c=>{
+    const el=document.createElement('div');el.className='flow-card';
+    el.innerHTML=`<div class="flow-em">${c.em}</div><div class="flow-txt">${c.txt}</div>`;
+    track.appendChild(el);
+  });
+  const add=document.createElement('div');add.className='flow-add';
+  add.innerHTML='<div class="flow-add-icon">🌱</div><div style="font-size:12px;margin-top:4px">記下感恩</div>';
+  add.onclick=()=>goTab('journal',document.querySelectorAll('.tab-item')[1]);
+  track.appendChild(add);
+}
+
+/* ────── QUOTES ────── */
+function buildDots(){
+  const d=document.getElementById('q-dots');d.innerHTML='';
+  S.quotes.forEach((_,i)=>{
+    const b=document.createElement('button');b.className='q-dot'+(i===S.qIdx?' on':'');
+    b.onclick=()=>setQ(i);d.appendChild(b);
+  });
+}
+function setQ(i){
+  S.qIdx=Math.max(0,Math.min(i,S.quotes.length-1));
+  const el=document.getElementById('quote-txt');
+  el.style.opacity='0';el.style.transform='translateY(6px)';
+  setTimeout(()=>{
+    el.innerHTML=S.quotes[S.qIdx].replace(/\n/g,'<br>');
+    el.style.opacity='1';el.style.transform='translateY(0)';
+    el.style.transition='opacity .28s,transform .28s';
+  },150);
+  document.querySelectorAll('.q-dot').forEach((d,j)=>d.classList.toggle('on',j===S.qIdx));
+}
+function prevQ(){setQ(S.qIdx===0?S.quotes.length-1:S.qIdx-1);}
+function nextQ(){setQ(S.qIdx===S.quotes.length-1?0:S.qIdx+1);}
+function openQEdit(){document.getElementById('qedit-ta').value=S.quotes[S.qIdx];document.getElementById('ov-qedit').classList.add('open');}
+function closeQEdit(){document.getElementById('ov-qedit').classList.remove('open');}
+function saveQEdit(){const v=document.getElementById('qedit-ta').value.trim();if(!v)return;S.quotes[S.qIdx]=v;gs('v7b-quotes',S.quotes);setQ(S.qIdx);closeQEdit();}
+
+/* ────── RITUAL ────── */
+function ritualAct(type){
+  bumpCounter(type);
+  const fb=type==='save'?FB_SAVE[Math.floor(Math.random()*FB_SAVE.length)]
+    :type==='pause'?{sym:'◌',title:'準備好，就是一切的開始',msg:'每一天的意圖，都是對宇宙的宣告。你的豐盛，正在醞釀之中。'}
+    :FB_SPEND.default;
+  showFb(fb);
+}
+
+/* ────── FEEDBACK ────── */
+function showFb({sym,title,msg}){
+  document.getElementById('fb-sym').textContent=sym;
+  document.getElementById('fb-title').textContent=title;
+  document.getElementById('fb-msg').textContent=msg;
+  document.getElementById('ov-fb').classList.add('open');
+}
+function closeFb(){document.getElementById('ov-fb').classList.remove('open');}
+
+/* ────── AFFIRMATIONS ────── */
+function renderAffs(){
+  const list=document.getElementById('aff-list');list.innerHTML='';
+  S.affs.forEach((a,i)=>{
+    const ok=S.checked.includes(i);
+    const row=document.createElement('div');row.className='aff-row'+(ok?' on':'');
+    const chk=document.createElement('div');chk.className='aff-chk';chk.textContent=ok?'✓':'';
+    const txt=document.createElement('div');txt.className='aff-txt';
+    txt.contentEditable='true';txt.spellcheck=false;txt.textContent=a;
+    txt.addEventListener('blur',()=>{const v=txt.textContent.trim();if(v){S.affs[i]=v;gs('v7b-affs',S.affs);}});
+    txt.addEventListener('click',e=>e.stopPropagation());
+    row.addEventListener('click',e=>{
+      if(e.target===txt||e.target.closest('[contenteditable]'))return;
+      const idx=S.checked.indexOf(i);if(idx>-1)S.checked.splice(idx,1);else S.checked.push(i);
+      gs('v7b-checked',S.checked);renderAffs();
+    });
+    row.appendChild(chk);row.appendChild(txt);list.appendChild(row);
+  });
+}
+function addAff(){const el=document.getElementById('aff-in');const v=el.value.trim();if(!v)return;S.affs.push(v);gs('v7b-affs',S.affs);el.value='';renderAffs();}
+
+/* ────── JOURNAL ────── */
+function loadJournal(){
+  const d=S.journal;
+  ['attract','became','realized','action'].forEach(k=>{const e=document.getElementById('j-'+k);if(e&&d[k])e.value=d[k];});
+  ['g1','g2','g3'].forEach(k=>{const e=document.getElementById(k);if(e&&d[k])e.value=d[k];});
+}
+function saveJournal(){
+  const d={
+    attract:document.getElementById('j-attract').value,
+    became:document.getElementById('j-became').value,
+    realized:document.getElementById('j-realized').value,
+    action:document.getElementById('j-action').value,
+    g1:document.getElementById('g1').value,
+    g2:document.getElementById('g2').value,
+    g3:document.getElementById('g3').value,
+  };
+  S.journal=d;gs('v7b_'+todayKey(),d);renderFlow();
+  const t=document.getElementById('save-toast');t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2800);
+}
+
+/* ────── FINANCE ────── */
+function openFinDrawer(){document.getElementById('ov-fin').classList.add('open');}
+function closeFinDrawer(){document.getElementById('ov-fin').classList.remove('open');}
+
+function setFType(t){
+  S.fType=t;S.selCat='';
+  document.getElementById('tt-inc').classList.toggle('on',t==='income');
+  document.getElementById('tt-exp').classList.toggle('on',t==='expense');
+  renderCats();
+}
+
+function renderCats(){
+  const w=document.getElementById('cat-wrap');w.innerHTML='';
+  CATS[S.fType].forEach(c=>{
+    const b=document.createElement('button');b.className='cat-chip'+(c===S.selCat?' on':'');
+    b.textContent=c;b.onclick=()=>{S.selCat=c;renderCats();};w.appendChild(b);
+  });
+}
+
+function renderMoods(){
+  const w=document.getElementById('mood-row');w.innerHTML='';
+  MOODS.forEach(m=>{
+    const b=document.createElement('div');b.className='mood-btn'+(m.name===S.selMood?' on':'');
+    b.innerHTML=`${m.em}<span class="mood-name">${m.name}</span>`;
+    b.onclick=()=>{
+      S.selMood=(S.selMood===m.name?'':m.name);renderMoods();
+    };
+    w.appendChild(b);
+  });
+}
+
+let prevAmt='';
+function onAmt(el){
+  if(el.value!==prevAmt&&el.value.length>0){
+    el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');
+    setTimeout(()=>el.classList.remove('pop'),380);
+  }
+  prevAmt=el.value;
+}
+
+function addRecord(){
+  const amt=parseFloat(document.getElementById('fin-amt').value);
+  if(!amt||amt<=0){document.getElementById('fin-amt').focus();return;}
+  const desc=document.getElementById('fin-desc').value.trim()||(S.fType==='income'?'一筆收入':'一筆支出');
+  const rec={id:Date.now(),type:S.fType,amount:amt,desc,cat:S.selCat,mood:S.selMood,date:new Date().toLocaleDateString('zh-TW')};
+  S.records.unshift(rec);gs('v7b-records',S.records);
+  bumpCounter(S.fType);
+  document.getElementById('fin-amt').value='';
+  document.getElementById('fin-desc').value='';
+  S.selCat='';S.selMood='';
+  renderCats();renderMoods();renderRecords();updateSummary();
+  closeFinDrawer();
+  /* mood-based affirmation if mood selected, else category feedback */
+  const moodObj=MOODS.find(m=>m.name===rec.mood);
+  if(moodObj){
+    setTimeout(()=>showFb({sym:moodObj.em,title:`感受到${moodObj.name}的你`,msg:moodObj.aff}),300);
+  } else {
+    const fb=S.fType==='income'?FB_SAVE[Math.floor(Math.random()*FB_SAVE.length)]:(FB_SPEND[S.selCat]||FB_SPEND.default);
+    setTimeout(()=>showFb(fb),300);
+  }
+}
+
+function renderRecords(){
+  const list=document.getElementById('rec-list');
+  if(!S.records.length){list.innerHTML='<div class="empty-rec">今天還沒有任何記錄，<br>但這也是一種開始</div>';return;}
+  list.innerHTML='';
+  S.records.slice(0,40).forEach((r,i)=>{
+    const el=document.createElement('div');el.className='rec-item';el.style.animationDelay=`${i*.04}s`;
+    const mEm=r.mood?MOODS.find(m=>m.name===r.mood)?.em||'':'';
+    el.innerHTML=`
+      <div class="rec-dot ${r.type}"></div>
+      <div class="rec-body">
+        <div class="rec-desc" contenteditable="true" spellcheck="false" onblur="editField(${r.id},'desc',this)" onclick="event.stopPropagation()">${r.desc}</div>
+        <div class="rec-meta">${r.cat||''}${mEm?' · '+mEm:''} · ${r.date}</div>
+      </div>
+      <div class="rec-right">
+        <div class="rec-amt ${r.type}">${r.type==='income'?'+':'-'}$${r.amount.toLocaleString()}</div>
+        <div class="rec-btns">
+          <button class="rec-btn" onclick="openEdit(${r.id})">編輯</button>
+          <button class="rec-btn" onclick="delRec(${r.id})">刪除</button>
+        </div>
+      </div>`;
+    list.appendChild(el);
+  });
+}
+function editField(id,field,el){const r=S.records.find(x=>x.id===id);if(!r)return;const v=el.textContent.trim();if(v){r[field]=v;gs('v7b-records',S.records);}}
+function delRec(id){S.records=S.records.filter(r=>r.id!==id);gs('v7b-records',S.records);renderRecords();updateSummary();}
+function openEdit(id){const r=S.records.find(x=>x.id===id);if(!r)return;S.editId=id;document.getElementById('edit-desc').value=r.desc;document.getElementById('edit-amt').value=r.amount;document.getElementById('ov-edit').classList.add('open');}
+function closeEdit(){document.getElementById('ov-edit').classList.remove('open');S.editId=null;}
+function saveEdit(){if(!S.editId)return;const i=S.records.findIndex(r=>r.id===S.editId);if(i>-1){const d=document.getElementById('edit-desc').value.trim();const a=parseFloat(document.getElementById('edit-amt').value);if(d)S.records[i].desc=d;if(a>0)S.records[i].amount=a;gs('v7b-records',S.records);renderRecords();updateSummary();}closeEdit();}
+function updateSummary(){
+  const inc=S.records.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
+  const exp=S.records.filter(r=>r.type==='expense').reduce((s,r)=>s+r.amount,0);
+  const bal=inc-exp;
+  document.getElementById('fs-inc').textContent='$'+inc.toLocaleString();
+  document.getElementById('fs-exp').textContent='$'+exp.toLocaleString();
+  const b=document.getElementById('fs-bal');b.textContent=(bal>=0?'+':'')+'$'+Math.abs(bal).toLocaleString();b.className='fin-val'+(bal>=0?' pos':'');
+}
+
+/* ────── DREAM ────── */
+function openDream(){document.getElementById('dream-url').value=S.dream.url||'';document.getElementById('dream-range').value=S.dream.opacity||8;document.getElementById('dream-op-val').textContent=(S.dream.opacity||8)+'%';prevDream(S.dream.url||'');document.getElementById('ov-dream').classList.add('open');}
+function closeDream(){document.getElementById('ov-dream').classList.remove('open');}
+function prevDream(url){const p=document.getElementById('dream-prev');const t=document.getElementById('dream-prev-txt');if(url&&url.startsWith('http')){p.style.backgroundImage=`url(${url})`;if(t)t.style.display='none';}else{p.style.backgroundImage='';if(t)t.style.display='';}}
+function updDreamOp(v){document.getElementById('dream-op-val').textContent=v+'%';}
+function saveDream(){const url=document.getElementById('dream-url').value.trim();const op=parseInt(document.getElementById('dream-range').value);S.dream={url,opacity:op};gs('v7b-dream',S.dream);applyDream();closeDream();}
+function applyDream(){const b=document.getElementById('dream-layer');if(S.dream.url&&S.dream.url.startsWith('http')){b.style.backgroundImage=`url(${S.dream.url})`;b.style.opacity=(S.dream.opacity||8)/100;}else{b.style.backgroundImage='';b.style.opacity='0';}}
+
+/* ────── NAV ────── */
+function goTab(name,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-item').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  btn.classList.add('active');
+  document.getElementById('page-title').textContent=PAGE_T[name];
+}
+
+/* ────── INIT ────── */
+(function init(){
+  /* Clear any old dark-theme localStorage keys from previous versions */
+  ['v4-theme','v5-theme','v6-theme','v7-theme'].forEach(k => {
+    const old = localStorage.getItem(k);
+    if (old === 't8' || old === 't6' || old === 't4') localStorage.removeItem(k);
+  });
+  applyTheme(S.theme);
+  initDate();
+  initCosmos();
+  buildDots();
+  setQ(0);
+  renderAffs();
+  loadJournal();
+  renderFlow();
+  renderCats();
+  renderMoods();
+  renderRecords();
+  updateSummary();
+  updateRing();
+  applyDream();
+})();
+</script>
+
+</body>
+</html>
